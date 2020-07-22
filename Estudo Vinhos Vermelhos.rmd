@@ -1,0 +1,654 @@
+---
+title: "Estudo Vinhos Vermelhos"
+author: "Fabricio Mattos"
+date: "07/07/2017"
+output: html_document
+---
+
+## Este documento explora as características dos vinhos vermelhos.
+
+```{r setup , include = FALSE}
+knitr::opts_chunk$set(fig.width=6, fig.height=6, fig.align='center', 
+               warning=FALSE, message=FALSE,
+               cache=TRUE)
+
+```
+
+```{r setup library ,message = FALSE, warning = FALSE, include = FALSE}
+install.packages("corrplot", repos = "http://cran.us.r-project.org")
+install.packages ('dplyr', repos = 'http://cran.us.r-project.org')
+library(corrplot)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+
+```
+
+
+
+```{r dados dos vinhos, include = FALSE}
+rwq <-read.csv('wineQualityReds.csv')
+
+```
+
+
+##Tabela com as informações dos vinhos vermelhos
+```{r Sumário dos dos vinhos, warning = FALSE}
+summary(rwq)
+```
+
+##Qualidade do vinho da nossa amostra.
+
+```{r Qualidade dos vinhos, warning = FALSE}
+qplot(x=quality, data=rwq) +
+  xlab("Qualidade") + ylab("Quantidade") +
+  ggtitle("Distribuição dos vinhos por qualidade")
+
+
+```
+
+A maioria das amostras tiveram notas entre 5 e 6, o que classificamos como mediano ou normal.
+
+##Criando classificações para os grupos de vinhos conforme sua nota de qualidade.
+
+```{r criando classificaçoes dos vinhos, warning = FALSE}
+rwq$quality_group <- cut(rwq$quality, breaks = c(0, 4, 7, 10),
+                     labels = c('baixa', 'normal', 'alta') )
+
+
+summary(rwq$quality_group)
+
+rwq.baixo_normal <- subset(rwq, quality_group %in% c('baixa', 'normal'))
+rwq.alto_baixo <- subset(rwq, quality_group %in% c('baixa', 'alta'))
+
+rwq.alto <- subset(rwq, quality_group ='alta')
+
+```
+
+
+##Verificando as caracteristicas dos vinhos com notas considerados de qualidade baixa e normal.
+
+Quanto a acidez
+```{r Características dos vinhos, warning = FALSE}
+
+g1 <- qplot(x = fixed.acidity,
+      data = rwq.baixo_normal) +
+  scale_x_continuous(limits = c(4, 16),breaks = seq(4, 16, 0.5)) +
+  ggtitle(parse(text= "Acidez *(g/dm^3)")) 
+  
+
+g2 <- qplot(x = log10(fixed.acidity),
+      data = rwq.baixo_normal) +
+      ggtitle(parse(text= "Acidez(log10) *(g/dm^3)")) 
+
+grid.arrange(g1,g2)
+```
+
+O gráfico apresenta um distribuição normal com uma grande cauda a direita, neste caso, foi utilizado uma transformação log10 para melhorar a visualização. Nota-se que temos uma concentração de acideze entre 0.8 e 1.
+
+
+Quanto a acidez volátil. Neste caso, quanto menor a acidez melhor, pois quanto maior for o % de acidez volátil maior o sabor de vinagre.
+
+```{r Acidez volátil dos vinhos, warning = FALSE}
+qplot(x=log10(volatile.acidity)+1,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Acidez volátil (g/',dm^3,')',sep=''))) +
+      scale_x_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, 0.1)) +
+      ggtitle("Acidez volátil") 
+
+```
+
+O gráfico de acidez volátil apresenta uma distribuição normal.
+
+Quanto a acido citrico. Nos vinhos tintos pode desaparecer devido à ação de bactérias láticas. 
+```{r Acido citrico dos vinhos,warning = FALSE}
+
+
+qplot(x=citric.acid,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Acido cítrico (g/',dm^3,')',sep=''))) +
+     geom_histogram(binwidth = 0.005) +
+    ggtitle("Acido citrico.") 
+  
+
+```
+
+
+Nste gráfico podemos ver uma distribuição irregular dos dados, diferente dos demais gráfico, que apresentam uma distribuição normal, sendo a maioria deles com cauda a direita.   
+
+
+Quanto a açucar residual.
+```{r Açúcar dos vinhos, warning = FALSE}
+
+g1 <-qplot(x=residual.sugar,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Açúcar (g/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) + 
+  ggtitle("Açúcar") 
+
+g2 <- qplot(x = log10(residual.sugar),
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Açúcar log10 (g/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) + 
+  ggtitle("Açúcar usando log10") 
+
+grid.arrange(g1,g2)
+
+```
+
+O gráfico apresenta um distribuição normal com uma grande cauda a direita, neste caso, foi utilizado uma transformação log10 para melhorar a visualização. Nota-se que temos uma concentração de açúcar residual entre  1 e 4.
+
+
+
+Quanto a cloretos.
+```{r Cloretos dos vinhos, warning = FALSE}
+g1 <- qplot(x=chlorides,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Cloretos (g/',dm^3,')',sep=''))) +
+    scale_x_continuous(limits = c(0, 0.5),breaks = seq(0, 0.5, 0.02)) +
+    ggtitle("Cloretos") 
+
+g2 <- qplot(x=log10(chlorides) +1,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Cloretos log10 (g/',dm^3,')',sep=''))) +
+    ggtitle("Cloretos") 
+
+grid.arrange(g1,g2)
+```
+
+Este gráfico apresnta um distribuição normal.
+
+Quanto a Dióxido sulfurico livre 
+```{r Dióxido sulfurico livre dos vinhos, warning = FALSE}
+
+g1 <- qplot(x=free.sulfur.dioxide,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('Dióxido sulfurico livre (mg/',dm^3,')',sep=''))) +
+    scale_x_continuous(limits = c(1, 72),breaks = seq(1, 72, 2)) + 
+    ggtitle("Dióxido sulfurico livre") 
+
+
+g2 <- qplot(x = log10(free.sulfur.dioxide),
+      data = rwq.baixo_normal,
+  xlab=expression(paste('Dióxido sulfurico livre log10 (mg/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) + 
+  ggtitle("Dióxido sulfurico livre usando log10") 
+
+
+grid.arrange(g1,g2)
+```
+
+Este gráfico apresenta uma distribuição quase normal com um desvio a direita.
+
+
+Quanto a cloretos totais.
+```{r cloretos totais dos vinhos, warning = FALSE}
+g1 <- qplot(x=total.sulfur.dioxide,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('cloretos totais (mg/',dm^3,')',sep=''))) +
+    scale_x_continuous(limits = c(5, 155),breaks = seq(5, 155,5 )) +
+    ggtitle("cloretos totais ") 
+
+
+g2 <- qplot(x = log10(total.sulfur.dioxide),
+      data = rwq.baixo_normal,
+      xlab=expression(paste('cloretos totais log10 (mg/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) + 
+  ggtitle("cloretos totais usando log10") 
+
+
+
+g3 <- qplot(x = sqrt(total.sulfur.dioxide),
+      data = rwq.baixo_normal,
+      xlab=expression(paste('cloretos totais sqrt (mg/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) + 
+  ggtitle("cloretos totais usando sqrt") 
+
+grid.arrange(g1,g2,g3)
+
+```
+
+O gráfico apresenta um distribuição normal com uma grande cauda a direita, neste caso, foi utilizado uma transformação log10 para melhorar a visualização. Nota-se que temos uma concentração de cloretos totais entre  10 e 20.
+
+Quanto a densidade.
+```{r densidade dos vinhos, warning = FALSE}
+
+qplot(x=density, 
+      data = rwq.baixo_normal,
+      xlab=expression(paste('densidade (g/',cm^3,')',sep=''))) +
+    scale_x_continuous(limits = c(0.99,1),breaks = seq(0.99, 1, 0.005)) +
+     ggtitle("Densidade") 
+  
+
+
+```
+
+O gráfico de densidade mostra um distribuição normal com valores entre 0.990 e 1, sendo que maioria dos valores se encontram entre 0.996 e 0.998
+
+
+Quanto ao PH
+```{r ph dos vinhos, warning = FALSE}
+
+qplot(x=pH,
+      data = rwq.baixo_normal) +
+      scale_x_continuous(limits = c(2.5,4),breaks = seq(0, 5, 0.2)) +
+     ggtitle("Ph") 
+
+
+
+```
+
+O gráfico de ph mostra um distribuição normal com valores entre 2.8 e 3.8. Sendo que 50% dos valores se encontram entre 3.2 e 3.4
+
+Quanto ao sulfatos
+```{r sulfatos dos vinhos,echo=FALSE}
+
+g1 <- qplot(x=sulphates,
+      data = rwq.baixo_normal,
+      xlab=expression(paste('sulfatos (g/',dm^3,')',sep=''))) +
+   scale_x_continuous(limits = c(0,2),breaks = seq(0, 2, 0.2)) + 
+   ggtitle("Sulfatos") 
+
+g2 <- qplot(x = log10(sulphates+1),
+      data = rwq.baixo_normal,
+       xlab=expression(paste('sulfatos log10 (g/',dm^3,')',sep=''))) +
+  geom_histogram(binwidth = 0.05) +
+  ggtitle("Sulfatos usando log10") 
+
+grid.arrange(g1,g2)
+
+
+```
+
+Este gráfico mostra uma distribuição normal com os valores variando entre 0.4 e 0.8.
+
+
+Quanto ao alcool.
+```{r alcool dos vinhos, warning = FALSE}
+
+g1 <- qplot(x=alcohol,
+      data = rwq.baixo_normal,
+       xlab=expression(paste('alcool (% por volume)',sep=''))) +
+    scale_x_continuous(limits = c(8,15),breaks = seq(8,15, 0.5)) +
+    ggtitle("Alcool") 
+
+g2 <- qplot(x = log10(alcohol),
+      data = rwq.baixo_normal,
+      xlab=expression(paste('alcool log10 (% por volume)',sep=''))) +
+  geom_histogram(binwidth = 0.05) +
+  ggtitle("Alcool usando log10") 
+
+grid.arrange(g1,g2)
+
+```
+
+O gráfico apresenta um distribuição normal com um viés a direita, neste caso, foi utilizado uma transformação log10 para melhorar a visualização. Nota-se que temos uma concentração de alcool entre 10 e 10.
+
+
+
+##A tabela com as informações dos vinhos a pontuação de qualidade considerada baixa e normal. 
+```{r tabela dos vinhos, warning = FALSE}
+summary(rwq.baixo_normal)
+```
+
+
+## A tabela com as informações e características dos vinhos com a maior pontuação de qualidade.
+Neste caso apenas 18 vinhos receberam a nota maior ou igual a 7.
+Como era esperado as informações diferem dos vinhos considerados baixos e normais.
+
+```{r tabela dos vinhos qualidade 8, warning = FALSE}
+rwq_quality <- subset(rwq,quality>=7)
+
+summary(rwq_quality)
+```
+
+#Análise de uma variável
+
+## Qual a estrutura da amostra de dados.
+Nesta amostra, nos temos os dados de 1599 observações de vinhos com 12 campos de características. Essas características combinadas podem fazer um vinho ser classificado em uma escala de 0 a 10, onde 0 é um 
+vinho ruim e 10 um ótimo vinho.
+
+
+
+##Qual é (são) a (s) característica (s) principal (is) de interesse em seu conjunto de dados ?
+Qualidade.Neste caso estamos procurando identificar quais as características principais de um vinho considerado de boa qualidade.
+Escolhemos comparar os vinhos considerados de qualidade baixa e normal ( entre 3 a 7), com os vinhos considerados de qualidade alta (acima de 7)
+
+##Quais outros recursos do conjunto de dados você acha que ajudará a apoiar sua investigação em suas características de interesse?
+Dióxido livres e totais. Acredito que tenham um relação direta com a qualidade do vinho,porém, só podem ser confirmado a medida que a exploração avança.
+
+Você criou novas variáveis das já existentes no conjunto de dados?
+Foi criada um nova variável chamada quality_group, onde foi classificado os vinhos conforme as faixas:
+0 a 4 -> baixa
+4 a 7 -> normal  
+7 a 10 -> alta
+
+
+#Análise de duas variável
+
+Para uma primeira análise verifica-se as correlações entre as váriaveis, criando um gráfico com as correlações para uma melhor visualização.
+
+```{r Correlação dos vinhos, warning = FALSE, fig.height=8, fig.width=8}
+
+rwq_corr <- subset( rwq, select = -c(quality_group) )
+
+W<-cor(rwq_corr)
+corrplot(W, method = 'number' , title='Gráfico de correlação entre os vinhos tintos', mar=c(0,0,1,0)) 
+
+```
+
+Com a visualização, observa-se que a temos uma correlação positiva com os acido cítrico,sulfatos e alcool além uma forte correlação negativa com acidez volátil e densidade.
+Os valors positivos estão variando de 0.23 até 0.48, o valor da correlação negativa foi de -0.39.
+
+Vamos análisar separadamente cada um deste elementos para descobrir como eles estão relacionados a qualidade dos vinhos.
+
+Acido cítrico x Qualidade
+```{r qualidade e os acido citricos dos vinhos, warning = FALSE}
+
+ggplot(aes(x = factor(quality), y = citric.acid),
+       data = rwq) +
+       xlab("Qualidade") +
+       ylab(expression(paste('Acido cítrico (g/',dm^3,')',sep=''))) +
+  geom_boxplot()  + ggtitle("Qualidade x acido crítico") 
+
+by(rwq$citric.acid, rwq$quality, summary)
+
+```
+
+Neste gráfico podemos ver que os vinhos que apresentam as melhores notas possuem uma maior quantidade de acido cítrico.
+
+Sulfatos x Qualidade
+```{r qualidade e os sulfatos dos vinhos, warning = FALSE}
+
+ggplot(aes(x = factor(quality), y = sulphates), data = rwq) +
+   geom_boxplot() +
+   xlab("Qualidade") +
+   ylab(expression(paste('Sulfatos (mg/',dm^3,')',sep=''))) +
+   ggtitle("Qualidade x Sulfatos") 
+
+
+by(rwq$sulphates, rwq$quality, summary)
+ 
+```
+
+Neste gráfico podemos ver que os vinhos que apresentam as melhores notas possuem uma maior quantidade de sulfatos.
+
+Acidez volátil x Qualidade
+```{r qualidade e a acidez volatil dos vinhos, warning = FALSE}
+
+ggplot(aes(x = factor(quality), y = volatile.acidity), data = rwq) +
+   geom_boxplot() +
+  xlab("Qualidade") +
+  ylab(expression(paste('Acidez Volátil (g/',dm^3,')',sep=''))) +
+  ggtitle("Qualidade x Acidez Volátil") 
+
+
+by(rwq$volatile.acidity, rwq$quality, summary)
+
+
+ 
+
+```
+
+Neste caso quanto menor a acidez volátil, melhor será o vinho, corroborando com a correlação negativa previamente apresentada.
+
+Alcool x Qualidade
+```{r qualidade e o alcool dos vinhos, warning = FALSE}
+
+ ggplot(aes(x = factor(quality), y = alcohol), data = rwq) +
+   geom_boxplot() +
+   xlab("Qualidade") +
+  ylab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ggtitle("Qualidade x Alcool") 
+
+
+by(rwq$alcohol, rwq$quality, summary)
+
+
+ 
+```
+
+Neste caso, podemos observar com maior clareza, a maior correlação que observamos (0.48), ou seja, quanto maior a concentração de alcool, melhor a qualidade do vinho.
+
+Densidade x Qualidade
+```{r qualidade e os densidade, warning = FALSE}
+
+ggplot(aes(x = factor(quality), y = density), data = rwq) +
+   geom_boxplot() +
+   xlab("Qualidade") +
+   ylab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+   ggtitle("Qualidade x Densidade") 
+
+by(rwq$density, rwq$quality, summary)
+
+
+```
+
+Assim como a acidez volátil, a densidade também apresentou correlação negativa, o que pode ser obsevado no gráfico, onde temos os menores valores para densidade no vinhos de melhor qualidade.
+
+
+Densidade x Alcool
+```{r qualidade e os densidade 2, warning = FALSE}
+
+ggplot(aes(x = alcohol, y = density), data = rwq) +
+  geom_point() +
+  xlab("Alcool(% por volume)") +
+  ylab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+  ggtitle("Densidade x Alcool") +
+  geom_smooth(method = 'lm')
+
+
+```
+
+Uma das correlações que se destacam , é a de densidade e alcool. Neste caso podemos observar que quanto maior o teor de alcool, menos denso é o vinho.
+
+
+
+##Análise de duas variável
+
+##Fale sobre alguns relacionamentos que você observou nesta parte da investigação. Como as características ##de interesse variam com as outras carcterísticas no conjuto de dados?
+
+Estamos buscando saber como as características da amostras se comportam em relaçõa a qualidade do vinho. Neste caso, as que mais de destacaram foram as correlações positivas com do acido cítrico,sulfatos e alcool além uma forte correlação negativa com acidez volátil e densidade.
+Os gráficos mostram que o alcool é um dos grandes fatores que levam o vinho a ser de qualidade ou não.
+
+##Você observou alguma relacão interessante entre as carcterísticas não principais?
+
+Uma das correlações que me chamou a atenção foi entre alcool e densidade. Neste caso, podemos ver pelo gráfico que os vinhos mais densos, possuem um teor alcolico menor. Ainda não é possível determinar com certeza, mas com o avançar dos estudos podemos conferir, se os melhores vinhos são aqueles com a menor densidade e o maior teor alcolico.
+
+
+##Qual a maior correlação observada?
+
+As maiores foram entre:
+ph x acidez fixo correlação negativa no valor de 0.68
+densidade x acidez fixa correlação positiva no valor de 0.67
+acido cítrico x acidez fixa correlação positiva no valor de 0.67
+
+
+##Dados Multivariados##
+
+Baseados nas informações retiradas da tabela de correlação vamos agora analisar os dados de densidade e açucar baseado na qualidade.
+
+```{r densidade, açucar baseado na qualidade dos vinhos, warning = FALSE}
+
+g1 <- ggplot(data=rwq,
+       aes(x=density, y = residual.sugar, color = factor(quality_group))) +
+       geom_point() +
+       xlab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+       ylab(expression(paste('açúcar (g/',dm^3,')',sep=''))) +
+       ggtitle("Qualidade do vinho por Açucar x Densidade")
+
+
+
+g2 <- ggplot(data=rwq.alto_baixo,
+       aes(x=density, y = residual.sugar, color = factor(quality_group))) +
+       geom_point()  + geom_smooth() +
+       xlab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+       ylab(expression(paste('açúcar (g/',dm^3,')',sep=''))) +
+       ggtitle("Qualidade do vinho por Açúcar x Densidade")
+
+  grid.arrange(g1,g2)
+```
+
+O primeiro gráfico mostra todos os agrupamentos utilizados, ou seja, os vinhos de baixa , normal e alta qualidade.
+
+No segundo gráfico, apenas utilizamos os vinhos de baixa e alta qualidade, para podemos destacar a diferença entre eles.
+
+Podemos notar um padrão de agrupamento, onde os vinhos de boa qualidade possuem baixa densidade além de baixo nível de açúcar.
+
+
+Agora iremos analisar a qualidade do vinho baseado no teor de alcool e sua densidade.
+```{r teor de alcool e densidade dos vinhos, warning = FALSE}
+
+
+g1 <- ggplot(data=rwq, aes(x=alcohol, y = density,
+                           color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por densidade x alcool") 
+
+
+g2 <- ggplot(data=rwq.alto_baixo,
+             aes(x=alcohol, y = density,color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por densidade x alcool") 
+
+  grid.arrange(g1,g2)
+
+```
+
+Neste gráfico podemos notar um padrão onde baixo teor alcólico combinado com alta densidade, produzem vinhos de baixa qualidade, ao contrário dos vinhos de alta qualidade que possuem um teor alcolico mais elevado e uma densidade baixa como vimos previamente.
+
+
+Agora analisaremos quanto a acidez volátil 
+
+```{r acidez volatil versus alcool e qualidade dos vinhos, warning = FALSE}
+
+g1 <- ggplot(data=rwq, aes(x=alcohol, y = volatile.acidity,
+                           color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('Acidez Volátil (g/',dm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por acidez volátil x alcool") 
+
+
+g2 <- ggplot(data=rwq.alto_baixo, aes(x=alcohol, y = volatile.acidity,
+                                      color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('Acidez Volátil (g/',dm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por acidez volátil x alcool") 
+
+  grid.arrange(g1,g2)
+
+
+```
+
+Uma das características marcantes dos vinhos de boa qualidade estão mostradas neste gráfico. Os vinhos de boa qualidade possume um alto teor alcolico ( maior que 10%) e baixa acidez volátil, enquanto os vinhos de baixa qualidade possuem uma acidez volátil alta e teor alcolico baixo.
+
+
+##Dados Multivariados##
+
+##Fale sobre alguns dos relacionamentos que você observou nesta parte da investigação. Haviam características que se fortaleceram em termos de observação das suas características de interesse?
+
+Os relacionamento que podemos citar, e que já haviíamos demonstrado que poderiam estar muito ligados, seria o relativo a densidade, açúcar e alcool.
+Podemos comprovar que quanto maior o teor alcólico e menor será a densidade do vinho, ocasionando vinhos de alta qualidade, somando-se a isso a quantidade de açúcar, ou seja, nos vinho de alta qualidade forem encontrados os menores níveis de açúcar.
+
+##Havia alguma interação interessante ou surpreendente entre as características?
+
+Como uma observação pessoal, fiquei supreso ao saber o que é a acidez volátil, que é que causa o aroma de vinagre nos vinhos, quando em doses elevadas. Neste caso faz sentido, que os vinhos considerados de alta qualidade tenham a acidez volátil em baixa quantidade, em relação a maiores concentrações nos vinhos de baixa qualidade.
+
+
+#Gráficos Finais
+
+```{r Qualidade dos vinhos 2, warning = FALSE, echo=FALSE}
+qplot(x=quality, data=rwq) +
+  xlab("Qualidade") + ylab("Quantidade") +
+  ggtitle("Distribuição dos vinhos por qualidade")
+
+```
+
+Este gráfico mostra como está a distribuição da nossa amostra. Neste caso temos muitos vinhos considerados normais, ou seja aquelas que estão na faixa de 5 a 7, e muito poucos vinhos cosiderados alto, ou seja na faixa de 8.
+
+```{r Correlação dos vinhos 2, warning = FALSE, fig.height=8, fig.width=8, echo=FALSE}
+
+#retirando a coluna não numerica
+
+rwq_corr <- subset( rwq, select = -c(quality_group) )
+
+W<-cor(rwq_corr)
+corrplot(W, method = 'number' , title='Gráfico de correlação entre os vinhos tintos', mar=c(0,0,1,0)) 
+
+```
+
+Este gráfico mostra a correlação entre todas as características da nossa amostra. Ficam mais evidentes as correlações que exploramos para descobrir as carcaterísticas que um bom vinho tem que ter, tais como acidez volátil que apresentou uma correlação negativa de 0.39 em relaçõa a qualidade, o que foi comprovado nos gráficos demonstrados, pois essa acidez quanto menor mlehor, pois em altas concentrações, produz um vinho com sabor de vinagre.
+
+A densidade apresentou correlação negativa de 0.17, pois os vinhos com qualidade alta apresentaram as menores densidades.
+
+O açúcar é um fator importante, conforme apresentado, pois quanto menor sua concentração mais alta a qualidade do vinho.
+
+O alcool apresentou o maior fator de correlação, 0.48, sendo um fator muito importante para a alta qualidade dos vinhos, pois quanto maior o teor alcólico mais alta a qualidade do vinho.
+
+
+
+```{r densidade, açucar acidez e ealcool baseado na qualidade dos vinhos, warning = FALSE, echo = FALSE}
+
+g1 <- ggplot(data=rwq.alto_baixo,
+       aes(x=density, y = residual.sugar, color = factor(quality_group))) +
+  geom_point()  + geom_smooth() +
+  xlab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+  ylab(expression(paste('açúcar (g/',dm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por Açucar x Densidade")
+
+g2 <- ggplot(data=rwq.alto_baixo, aes(x=alcohol, y = density,
+                                      color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('densidade (g/',cm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por densidade x alcool") 
+
+g3 <- ggplot(data=rwq.alto_baixo, aes(x=alcohol, y = volatile.acidity,
+                                      color = factor(quality_group))) +
+  geom_point() + 
+  geom_smooth(method = loess, fullrange = TRUE, alpha = 0.1, size = 1.5 ) +
+  xlab(expression(paste('Alcool (% por volume)',sep=''))) +
+  ylab(expression(paste('Acidez Volátil (g/',dm^3,')',sep=''))) +
+  ggtitle("Qualidade do vinho por acidez volátil x alcool") 
+
+
+  grid.arrange(g1,g2,g3)
+  
+  rwq.alto_stat <- rwq.alto[c('density','residual.sugar' ,'volatile.acidity','alcohol')]
+  summary(rwq.alto_stat)
+  
+```
+
+Estes gráficos demonstram as diferenças e as principais características que um vinho de alta qualidade deve possuir, e que os diferem dos vinhos de baixa qualiade.
+Neste exemplo podemos ver que os vinhos considerados de alta qualidade devem ter baixa densidade ,acidez volátil e açúcares e um alto teor alcoolico, a tabela anexa demonstra os as médias dos vinhos considerados de alta qualiadade.
+
+
+#Reflexão
+
+As informações da base de dados continham 1599 observações a respeito de diversos vinhos, suas propriedades químicas e foram avalidades relativo a sua qualidade. Para analisar a base de dados e descobrir quais os fatores que levam um vinho a ser considerado de boa qualidade, foi feito um levantamento de cada propriedade em separado dos vinhos considerados de boa, média e baixa qualidade.
+
+Após esse levantamento, foi feito um investigação baseado nas correlações entre as propriedades dos vinhos, onde se investigou aquelas correlações que apresentavam os indices mais positivos e negativos, com isso sendo possível identificar padrões de comportamento entre os elementos químicos, para descobrir, quais seriam os mais relevantes em um vinho considerado de boa qualidade.
+
+Foram descobertas 4 variáveis importantes para que o vinho fosse considerado de boa qualidade, sendo elas, Acidez volátil, densidade, alcool e açucar.
+
+Os vinhos considerados de boa qualidade apresentam um baixo nível de cloretos e de açucar , um nível de  densidade abaixo de 0.997 e alto teor alcolico (sempre maior que 10%).
+Uma das dificulades encontradas foi explorar um base de dados onde não se tem nenhum tipo de conhecimento sobre ela. É sempre muito complexo fazer uma análise exploratória, porém quando se tem o conhecimento sobre o assunto, é possível fazer explorações com maior grau de certeza e confiança, o que não acontece em bases totalmente desconhecidas. Neste caso se faz necessário uma pesquisa prévia para entender o assunto para que possomas fazer as perguntas certas, e mais importante, para obtermos respostas coerentes e tenhamos o discernimento para entendê-las, interpretá-las e retirar as informações certas.
+
+Um estudo que pode ser feito com essa base de dados que seria interessante, seria treinar uma máquina de aprendizado com bases nas informações que possuímos hoje, para classificar a qualiade dos vinhos conforme suas características.
+
+
+Recursos:
+www.wikipedia.com
+http://www.winelab.com.br/
+
